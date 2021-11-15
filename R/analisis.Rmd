@@ -1,0 +1,374 @@
+---
+title: "cdjkcjkscnk"
+subtitle: |
+  | analisis-examen
+  | Universidad Alberto Hurtado
+  | Introducción a R
+  | Profesora: Valentina Andrade
+  | Ayudantes: Dafne Vargas y Nicolás Godoy
+author: "Rosario Astorga Pinto"
+date: "22/11/2021"
+output:
+  html_document: 
+    theme: cosmo
+    toc_depth: 2
+    toc_float: yes
+    highlight: pygments
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning = F, message = F)
+Sys.setlocale("LC_CTYPE", "spanish")
+options(OutDec= ",", digits = 3)
+```
+
+# 1. Abstract (100-150 palabras)
+
+# 2. Introducción (200-250 palabras)
+
+
+
+
+
+# 3. Análisis (300-500 palabras)
+
+## 3.1 Presentación de la base
+
+::: {style="text-align: justify"}
+La base a utilizar para el análisis de regresión lineal y logística corresponde los datos procesados de la base previamente procesada con muestra aleatoria de 1000 casos de la encuesta **MOVID-IMPACT (2020) del módulo "Orientaciones del Trabajo"**. El objetivo de esta encuesta transversal combinado es analizar el impacto en salud, social y económico de la pandemia por COVID-19 en Chile. En otras palabras, se busca evaluar la respuesta del sistema de salud y la política social a la pandemia COVID-19 para retroalimentar futuros abordajes ante agentes con potencial epidémico.
+
+Antes de procesar los datos, habían 6 variables pero luego de recodificar la cantidad de variables aumentó a 7 de las cuales 5 servirán para el análisis. La unidad de análisis son los individuos y la población objetivo son hombres y mujeres mayores de 18 alis que residen en zonas urbanas de Chile. El **diseño muestral** es **probabilístico** y **estratificado** según área geográfica y tamaño poblacional. Utiliza un marco muestral actualizado de direcciones de viviendas particulares representativo de la población nacional. Y, finalmente, la fecha de realización de las encuestas telefónicas fue entre el 4 y el 22 de diciembre 2020 y se reportaron 1261 casos.
+:::
+
+## 3.2 Carga de paquetes
+
+```{r carga_paquetes, message=FALSE, warning=FALSE, include=FALSE}
+
+pacman::p_load(dplyr, #Para manipular datos
+               tidyverse, #Universo de paquetes
+               magrittr, #Para utilizar el operador pipe
+               srvyr, #Para trabajar con muestras complejas
+               survey,#para estimar los modelos con peso muestral
+               rmdformats, #Proporciona varios formatos de salida HTML de estilos únicos y atractivos
+               remotes, #Para instalar texreg desde GitHub
+               texreg, #Para crear tablas en formato publicable
+               sjPlot) #Para visualizar los datos
+    
+  
+```
+
+## 3.3 Carga de datos
+
+```{r carga_datos, message=FALSE, warning=FALSE, include=FALSE}
+datos_proc <- readRDS("../output/datos/datos_proc.rds")
+```
+
+
+
+## 3.4 Análisis de correlación
+
+::: {style="text-align: justify"}
+El análisis de correlación mide la existencia de un cambio sistemático entre puntajes de dos o más variables cuantitativas, asumiendo una relación lineal entre ellas, es decir, el cambio de una variable tiene sobre otra, puede ser representada linealmente. Es la variación conjunta que se debe probar mediante **R de Pearson**: coeficiente a través del cual se mide la existencia de correlación entre las variables, es decir, es un estadístico que asume que la relación entre las variables es lineal.
+
+En ese sentido, si se observa la matriz de correlación es posible identificar que hay una **correlación positiva**, es decir, que la pendiente de la recta va hacia arriba porque las dos variables van en el **mismo sentido**. En otras palabras, la relación de estas variables es directa, esto quiere decir que al ser ambas positivas, apuntan a una misma dirección. Si aumenta el puntaje de la variable X, aumentará el puntaje de la variable Y.
+
+El **R de Pearson** además del sentido de la relación va a indicar que tan fuerte es la correlación, sin embargo, el tamaño de la correlación es independiente del sentido. A este respecto, la correlación se mide a través de R de Pearson y lo que muestra es una medida estandarizada entre el nivel de correlación entre las variables, estos valores van entre -1 a +1, mientras más se acerque a 1 hay mayor correlación. En cuanto a la fuerza de asociación, el R de Pearson tiene un valor de **0,136** el cual indica una **correlación débil** ya que al acercarse más al 0, alejándose del 1, hay **menor correlación**.
+
+En relación al nivel de significancia de la asociación, el **valor-p** es **menor a 0,001** lo cual indica, con un 99,9% de confiabilidad, que **existe** una **relación estadísticamente significativa** entre el cumplimiento de las medidas de cuidado y la percepción de riesgo. Por ende, se acepta la hipótesis alternativa de asociación.
+
+En síntesis, la correlación es positiva, débil y es posible afirmar que existen asociaciones significativas entre el cumplimiento de las medidas de cuidado y la percepción de riesgo. A modo de complementar, cabe destacar que en ciencias sociales es difícil encontrar correlaciones mayores a 0,6 o 0,7.
+:::
+
+***Matriz de correlación***
+
+```{r correlacion, message=FALSE, warning=FALSE}
+datos_proc%>%
+select(cuidarse, riesgo) %>% 
+tab_corr(.,
+         corr.method =  "pearson",  
+         title = "Matriz de correlación",
+         show.p = TRUE,
+         encoding = "UTF-8")
+```
+
+## 3.5 Regresión Lineal Múltiple
+
+### a. Modelos lineales múltinomiales
+
+***Construcción Modelo 1***
+
+```{r modelo1, message=FALSE, warning=FALSE}
+
+# Modelo 1 lineal
+modelo1 <- lm(cuidarse ~ riesgo + trabaja + edad,
+              data = datos_proc, 
+              weights = factor_expansion)
+
+# Modelo 1 con diseño muestral
+
+modelo1_survey <- svyglm(cuidarse ~ riesgo + trabaja + edad,
+                         family = gaussian(link = "identity"),
+                         design = movid_objeto,
+                         data = datos_proc)
+
+#Finalmente, visualizamos
+
+summary(modelo1_survey)
+
+
+```
+
+***Construcción Modelo 2***
+
+```{r modelo2, message=FALSE, warning=FALSE}
+
+# Modelo 2 lineal
+modelo2 <- lm(cuidarse ~ riesgo_factor + trabaja + edad,
+              data = datos_proc, 
+              weights = factor_expansion)
+
+# Modelo 2 con diseño muestral
+
+modelo2_survey <- svyglm(cuidarse ~ riesgo_factor + trabaja + edad,
+                         family = gaussian(link = "identity"),
+                         design = movid_objeto,
+                         data = datos_proc)
+
+#Finalmente, visualizamos
+
+summary(modelo2_survey)
+summary(modelo2)
+
+
+```
+
+### b. Representación gráfica
+
+A continuación se muestra la tabla única con el modelo 1 y el modelo 2:
+
+```{r tabla_modelos}
+
+sjPlot::tab_model(list(modelo1, modelo2), # seleccionamos ambos modelos
+  show.ci=FALSE, # no mostrar intervalo de confianza (por defecto lo hace)
+  show.reflvl = TRUE, #valor de referencia de cada factor
+  p.style = "numeric_stars", # asteriscos de significación estadística
+  dv.labels = c("Modelo 1", "Modelo 2"), # etiquetas de modelos o variables dep.
+  string.pred = "Predictores", string.est = "β", # nombre predictores y símbolo beta en tabla
+  string.intercept = "(Intercepto)", # mostrar intercepto
+  digits = 3, #3 dígitos
+  encoding =  "UTF-8",
+  lang = "es") #columnas en español 
+
+```
+
+
+### d. Interpretación coeficientes modelo 2
+
+::: {style="text-align: justify"}
+El **intercepto 3.510** indica la predicción del promedio en el cumplimiento de las medidas de cuidado social (cuidarse) si la variable edad, trabaja y riesgo son cero. Este intercepto **no** tiene mucho **significado** debido a que eso implica un individuo ficticio que tenga 0 de edad, no trabaje ni tampoco tenga una percepción de riesgo al COVID-19, por lo cual **no es** parte de la pregunta por los factores psicosociales como sociodemográficos que son **relevantes** para predecir la adherencia a las medidas de cuidado contra el COVID-19.
+
+El modelo 2 muestra que a medida que aumenta la percepción de riesgo al COVID-19, el promedio en el cumplimiento de las medidas de cuidado tiende a ser más alto. En ese sentido, este modelo estima el cumplimiento de las medidas de cuidado considerando en conjunto la edad, si trabaja o no y la percepción de riesgo al COVID-19.
+
+En relación a la variable **"edad"**, por un lado, es posible afirmar que para una persona adulta, **aumenta** en un **0,081 puntos** el nivel de cumplimiento de las medidas de cuidado en comparación a una persona joven, teniendo un efecto positivo. Por otro lado, el nivel de cumplimiento con las medidas de cuidado **aumenta** en un **0,177 puntos** para un adulto mayor en comparación con el nivel de cumplimiento de las medidas de cuidado para un joven, teniendo un efecto positivo.
+
+En el caso de la variable **"trabaja"**, el nivel de cumplimiento de las medidas de cuidado para una persona que no trabaja **disminuye** en un **0,037 puntos** en comparación a una persona que sí trabaja, teniendo un efecto negativo.
+
+Con respecto a la variable **"riesgo"**, cabe mencionar que para una persona que percibe como algo peligroso el coronavirus **aumenta** en un **0,469 puntos** el nivel de cumplimiento de las medidas de cuidado en comparación a alguien que percibe como nada peligroso el virus, teniendo un efecto positivo. También se puede observar que para una persona que percibe como bastante peligroso **aumenta** en un **0,613 puntos** el nivel de cumplimiento de las medidas de cuidado en comparación a alguien que percibe como nada peligroso el COVID-19. Asimismo, se puede establecer con un **95%** de **confiabilidad**, que el nivel de cumplimiento de las medidas de cuidado para una persona que percibe como muy peligroso el coronavirus **aumenta** en un **0,738 puntos** en comparación a una persona que percibe como nada peligroso el virus, teniendo un efecto positivo y significativo. Por último, se afirma, con un **95% de confiablidad**, que el nivel de cumplimiento de las medidas de cuidado para una persona que percibe como **extremadamente peligroso** el coronavirus **aumenta** en un **0,845 puntos** en comparación a una persona que percibe como nada peligroso el virus, teniendo un efecto positivo y significativo.
+
+El **coeficiente** que **más influye** en el cumplimiento de las medidas de cuidado social es el de la categoría "Extremadamente peligroso " de la variable sobre percepción de **riesgo** al COVID-19, con un valor de 0,845 a un 95% de confiabilidad.
+
+Respondiendo a la pregunta acerca de: ¿predicen la percepción de riesgo, el trabajar y la edad, el cumplimiento de las medidas de cuidado?, en el caso del modelo 2, **ni el trabajar ni la edad predicen el cumplimiento de las medidas de cuidado** ya que al no ser significativas no logran explicar la variable dependiente ni tienen un efecto sobre ella, por lo que la capacidad explicativa y predictiva del modelo queda reducida, esto quizás por un tema del comportamiento o distribución de la muestra. En cambio, la variable "Riesgo" con sus categorías "Muy peligroso" y "Extremadamente peligroso" **logran predecir** el cumplimiento de las medidas de cuidado social.
+:::
+
+### e. Para cada una de las hipótesis planteadas, argumenta si observas evidencia a favor o no en los resultados de tus análisis.
+
+::: {style="text-align: justify"}
+Respecto a la **primera hipótesis** que plantea que a mayor percepción de riesgo contra el COVID-19, mayor frecuencia de cumplimiento de la distancia física, es posible afirmar que se observa evidencia a favor en los resultados de los análisis por lo que se **acepta** la hipótesis. En cuanto a la **segunda** hipótesis que establece que las personas que trabajan presentan menor posibilidad de mantener distancia física, cabe destacar que se observa evidencia a favor, por lo que se **acepta la hipótesis**. En relación con la tercera hipótesis sobre que las mujeres presentan mayor frecuencia de mantener distancia física que los hombres, es preciso mencionar que no se utilizó esa variable para observar el efecto por lo que no es posible argumentar a favor o en contra. Finalmente, con respecto a la **cuarta hipótesis** que afirma que los adultos mayores presentan mayor frecuencia de mantener distancia física para cuidarse del COVID-19 que los jóvenes, es posible argumentar que tal hipótesis **se acepta** ya que los resultados lo evidencian.
+:::
+
+```{r forest_plot_modelo2, message=FALSE, warning=FALSE}
+
+sjPlot::plot_model(modelo2, 
+                   show.p = T,
+                   show.values =  T,
+                   show.intercept = T,
+                   digits = 3,
+                   type = c("est"),
+                   title = "Gráfico 1. Modelo 2 de regresión lineal que estima la frecuencia de cuidarse", 
+                   vline.color = "pink")
+```
+
+### f. Porcentaje de la varianza explicada y estadístico F
+
+::: {style="text-align: justify"}
+En el modelo 1, el porcentaje de varianza de la variable dependiente (cuidarse) explicada por las variables predictoras o independientes (percepción de riesgo, el trabajar y la edad) es de un `r paste0(round((summary(modelo1)$r.squared)*100,3), "%")` donde el $R^2$ es de `r round(summary(modelo1)$r.squared,3)`. En relación al coeficiente de Fisher, este es de `r round(summary(modelo1)$fstatistic[1],3)` con `r round(summary(modelo1)$fstatistic[3],3)` grados de libertad.
+
+En el modelo 2, el porcentaje de varianza de la variable dependiente (cuidarse) explicada por las variables predictoras o independientes (percepción de riesgo, el trabajar y la edad) es de un `r paste0(round((summary(modelo2)$r.squared)*100,3), "%")` donde el $R^2$ es de `r round(summary(modelo2)$r.squared,3)`. En relación al coeficiente de Fisher, este es de `r round(summary(modelo2)$fstatistic[1],3)` con `r round(summary(modelo2)$fstatistic[3],3)` grados de libertad.
+:::
+
+### g. Utiliza la ecuación estimada para calcular el cumplimiento de las medidas de cuidado *esperada* para quiénes trabajan y para quienes no lo hacen.
+
+
+Por motivos estadísticos, se decide a trabajar en los siguientes puntos con el modelo 2.
+
+
+***Tabla valores esperados modelo 2***
+
+```{r tabla_estimada}
+
+get_model_data(modelo2,
+               digits = 3,
+               terms = "trabaja",
+               type = c("pred"))
+
+```
+
+
+
+***Ecuación estimada variable trabaja***
+
+```{=tex}
+\begin{equation}
+\widehat{cuidarse}= 3.510 + 3511.38*trabaja
+\end{equation}
+```
+
+
+***Forest plot cuidarse y trabaja***
+
+```{r forest_plot_cuidarse_trabaja, message=FALSE, warning=FALSE}
+
+sjPlot::plot_model(modelo2, 
+                   show.p = T,
+                   show.values =  T,
+                   show.intercept = T,
+                   terms = "trabaja",
+                   digits = 3,
+                   type = c("pred"),
+                   title = "Gráfico 2. Modelo 2 estimación valores esperados de cuidarse con trabaja", 
+                   vline.color = "orange")
+```
+
+## 3.6 Modelo logístico
+
+### a. Construcción múltiple modelos logísticos
+
+A continuación se crean diferentes modelos con la variable dummy:
+
+```{r modelos_logisticos, message=FALSE, warning=FALSE}
+
+modelo0 <- glm(cuidarse_dummy ~ 1, family = binomial(link = "logit"), data = datos_proc)
+modelo3 <- glm(cuidarse_dummy ~ edad, family = binomial(link = "logit"), data = datos_proc)
+modelo4 <- glm(cuidarse_dummy ~ trabaja, family = binomial(link = "logit"), data = datos_proc)
+modelo5 <- glm(cuidarse_dummy ~ edad + trabaja, family = binomial(link = "logit"), data = datos_proc)
+modelo6 <- glm(cuidarse_dummy ~riesgo_factor + edad +  trabaja, family = binomial(link = "logit"), data = datos_proc)
+modelo6survey <- svyglm(cuidarse_dummy ~riesgo_factor + edad +  trabaja, family = binomial(link = "logit"), design = movid_objeto, data = datos_proc)
+
+```
+
+
+
+### b. Representación modelos en una tabla
+
+Luego, se representan los modelos en una tabla única con coeficientes exponenciados:
+
+```{r tabla_modelos_logisticos}
+sjPlot::tab_model(list(modelo0,modelo3,modelo4,modelo5,modelo6),
+  string.intercept = "(Intercepto)",
+  string.pred = "Predictores",
+  string.est = "Estimación (OR)",
+  p.style = "stars",
+  collapse.ci = T,
+  digits = 3,
+  dv.labels = c("Modelo 1", "Modelo 3", "Modelo 4", "Modelo 5", "Modelo 6"),
+  transform = "exp",
+  show.reflvl = TRUE,
+  encoding = "UTF-8",
+  lang = "es")
+```
+
+
+
+### c. Interpretación de coeficientes en términos de dirección y fuerza de la asociación
+
+Valores menores a 1 reflejan una asociación negativa, mientras que valores mayores que 1 dan cuenta de una asociación positiva.
+
+::: {style="text-align: justify"}
+Respecto a los coeficientes del modelo 6, es posible mencionar que para la variable **"edad"**, las chances de cumplir con las medidas de cuidado social para los **adultos**, controlando el efecto de las otras variables, son un **11,5% mayores** respecto a las **chances** de cumplir con las medidas de cuidado para los **jóvenes**. En cambio, los **adultos mayores** poseen **38,3% más chances** de cumplir con las medidas de cuidado social respecto a las chances de los jóvenes de cumplir con las medidas de cuidados contra el COVID-19.
+
+Con respecto a la variable **"trabaja"**, las chances de que una persona que **no trabaja** cumpla con las medidas de cuidado ante el COVID-19 son **0,7% menores** a las chances de que una persona que **sí trabaja** cumpla con las medidas de cuidado.
+
+En relación a la variable sobre **percepción de riesgo** al COVID-19, las chances de que una persona que percibe como **algo peligroso** al virus cumpla con las medidas de cuidado son **147,5% mayores** a las chances de que una persona que percibe como nada peligroso cumpla con las medidas de cuidado ante el virus. Por un lado, las chances de percibir al COVID-19 como **bastante peligroso** son **234,9% mayores** a las chances de percibirlo como nada peligroso. Por otro lado, las chances de cumplir con las medidas de cuidado de quienes perciben al virus como **muy peligroso** son **328,3% mayores** a las chances de cumplir con las medidas de cuidado de quienes perciben al virus como nada peligroso. Por último, las chances de que una persona que considera al virus como **extremadamente peligroso** cumpla con las medidas de cuidado son **399,5% mayores** a las chances de que una persona que considera al virus como nada peligroso cumpla con las medidas de cuidado.
+
+Finalmente, para las variables **"edad"**, **"trabaja"**, las categorías "Nada peligroso", "Algo peligroso", "Bastante peligroso" de la variable "Riesgo", es posible mencionar que al **no** ser **significativas**, no existe un efecto a nivel muestral . Por lo tanto, cabe destacar que, por ejemplo, a medida que aumenta la edad no existe una diferencia en las chances de quienes cumplen y no cumplen con las medidas de cuidado social.
+:::
+
+
+
+### d. Gráfico de valores predichos con el modelo 6 para el cumplimiento de las medidas de cuidado según edad
+
+***Gráfico modelo 6 de valores predichos cuidados según edad***
+
+```{r valores_predichos_cuidados_edad, message=FALSE, warning=TRUE}
+plot_model(modelo6, type = c("pred"),
+           terms = c("edad"),  digits = 3,
+  title = "Gráfico 3. Modelo 6 logístico que estima la frecuencia de cuidarse según edad")
+```
+
+
+
+### e. Comparación y reporte estimación modelo 6 con R base y modelo 6 con diseño complejo de encuestas. Reporte ambos modelo y reflexione sobre la importancia del uso de ciertos paquetes y argumentos para la estimación de modelos.
+
+***Reporte con summary de modelo 6 con R base y diseño complejo***
+
+Primero se reporta el modelo 6 sin pesos muestrales:
+
+```{r reporte_modelo6_R_base, message=FALSE, warning=FALSE}
+
+summary(modelo6)
+
+```
+
+Luego se compara con el modelo con pesos muestrales:
+
+```{r reporte_modelo6_diseño_complejo, message=FALSE, warning=FALSE}
+
+summary(modelo6survey)
+
+```
+
+***Reporte con tab_model de modelo 6 con R base y diseño complejo***
+
+Asimismo, se reporta la tabla del modelo 6 con R base:
+
+```{r tabla_modelo6_R_base, message=FALSE, warning=FALSE}
+sjPlot::tab_model(modelo6, 
+                  show.ci=FALSE, 
+                  transform = 'exp', 
+                  p.style = "stars", 
+                  df.method = 'wald', 
+                  dv.labels = "Modelo 6 con R base", 
+                  string.pred = "Predictores", string.est = "β", 
+                  encoding =  "UTF-8")
+```
+
+Para luego compararla con la tabla del modelo 6 con diseño complejo:
+
+```{r tabla_modelo6_diseño_complejo, message=FALSE, warning=FALSE}
+sjPlot::tab_model(modelo6survey, 
+                  show.ci=FALSE, 
+                  transform = 'exp', 
+                  p.style = "stars", 
+                  df.method = 'wald',
+                  dv.labels = "Modelo 6 diseño complejo", 
+                  string.pred = "Predictores", string.est = "β", 
+                  encoding =  "UTF-8")
+```
+
+# 4. Conclusión (150-200 palabras) 
+
+# 5. Referencias 
+
+
+
