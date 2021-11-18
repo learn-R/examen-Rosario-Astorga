@@ -1,7 +1,7 @@
 ---
-title: "Hacia la corresponsabilidad social en los cuidados: Un análisis desde la perspectiva de género a los factores que inciden en la percepción de la carga de trabajos de cuidado en la pandemia en Chile"
+title: "cdjkcjkscnk"
 subtitle: |
-  | Análisis examen: Proyecto final 
+  | analisis-examen
   | Universidad Alberto Hurtado
   | Introducción a R
   | Profesora: Valentina Andrade
@@ -25,39 +25,21 @@ options(OutDec= ",", digits = 3)
 
 # 1. Abstract (100-150 palabras)
 
-::: {style="text-align: justify"}
-La pandemia del COVID-19 ha demostrado que tanto las economías globales formales del mundo como nuestros hogares, se construyen sobre el trabajo doméstico y de cuidado, no reconocido ni remunerado que realizan mayoritariamente las mujeres y niñas, quienes en estos tiempos se han visto mayormente afectadas por la carga que significa la doble o triple jornada. La siguiente investigación se propone analizar los factores que influyen en la percepción de la variación de la carga de trabajos de cuidado en la pandemia en Chile, considerando el sexo, la edad, el trabajar, los ingresos, las labores domésticas y el estado de salud mental. Para efectos de este trabajo, se utilizó la base de datos MOVID-IMPACT (n =674) y mediante un análisis de regresión logística se concluye que……..Tal relación puede ser explicada por o También fue posible determinar que
-:::
-
 # 2. Introducción (200-250 palabras)
 
-::: {style="text-align: justify"}
-El trabajo de cuidados es un tema que históricamente se le ha atribuido a las mujeres....el asunto en cuanto a la corresponsabilidad social del cuidado como principio rector de la sociedad es una realidad que se hace urgente y que ha quedado en evidencia durante esta crisis sanitaria.....
-
-La pandemia del COVID-19 ha demostrado que tanto las economías globales formales del mundo como nuestros hogares, se construyen sobre el trabajo doméstico y de cuidado, no reconocido ni remunerado que realizan mayoritariamente las mujeres y niñas, quienes en estos tiempos se han visto mayormente afectadas por la carga que significa la doble o triple jornada. Cabe preguntarse ¿la corresponsabilidad debe ser incluida en la nueva Constitución?. A modo de proyección → El principio de corresponsabilidad social de los cuidados desde la desfeminización y colectivización de los cuidados como principio rector de la organización social 
-
-Esta realidad, en el actual contexto de pandemia, persiste con una magnitud preocupante. Así lo han advertido organismos como ONU Mujeres y Cepal, que en el informe Cuidados en América Latina y el Caribe en tiempos de COVID-19: hacia sistemas integrales para fortalecer la respuesta y la recuperación (agosto 2020), señalan que la crisis “ha demostrado la insostenibilidad de la actual organización social de los cuidados, intensificando las desigualdades económicas y de género existentes, puesto que son las mujeres más pobres quienes más carga de cuidados soportan y a quienes la sobrecarga de cuidados condiciona, en mayor medida, sus oportunidades de conseguir sus medios para la subsistencia”.
+Según la Encuesta Nacional de Uso del Tiempo del INE, de 2015, en el Chile prepandémico las mujeres dedicaban 5,89 horas al trabajo no remunerado por día, superando en más de tres horas a los hombres, quienes destinaban 2,74 horas a las mismas labores
 
 
-Pregunta guía: ¿Qué factores influyen en la percepción de la variación de la carga de trabajos de cuidado en pandemia en Chile?
-
-Objetivo general: analizar factores influyen en la percepción de la variación de la carga de trabajos de cuidado en la pandemia en Chile
-
-
-
-:::
 
 # 3. Análisis (300-500 palabras)
 
+## 3.1 Presentación de la base
+
 ::: {style="text-align: justify"}
+La base a utilizar para el análisis de regresión lineal y logística corresponde los datos procesados de la base previamente procesada con muestra aleatoria de 1000 casos de la encuesta **MOVID-IMPACT (2020) del módulo "Orientaciones del Trabajo"**. El objetivo de esta encuesta transversal combinado es analizar el impacto en salud, social y económico de la pandemia por COVID-19 en Chile. En otras palabras, se busca evaluar la respuesta del sistema de salud y la política social a la pandemia COVID-19 para retroalimentar futuros abordajes ante agentes con potencial epidémico.
 
-
-
-
-
-
+Antes de procesar los datos, habían 6 variables pero luego de recodificar la cantidad de variables aumentó a 7 de las cuales 5 servirán para el análisis. La unidad de análisis son los individuos y la población objetivo son hombres y mujeres mayores de 18 alis que residen en zonas urbanas de Chile. El **diseño muestral** es **probabilístico** y **estratificado** según área geográfica y tamaño poblacional. Utiliza un marco muestral actualizado de direcciones de viviendas particulares representativo de la población nacional. Y, finalmente, la fecha de realización de las encuestas telefónicas fue entre el 4 y el 22 de diciembre 2020 y se reportaron 1261 casos.
 :::
-
 
 ## 3.2 Carga de paquetes
 
@@ -82,20 +64,9 @@ pacman::p_load(dplyr, #Para manipular datos
 datos_proc <- readRDS("../output/datos/datos_proc.rds")
 ```
 
-### 3.4. Creación objeto encuesta
-
-# Creamos un nuevo objeto llamado movid_objeto con la información de movid_proc, luego aplicamos diseño muestral, especificando los ids a partir de 1 (entrevistado seleccionado) y el ponderador con factor de expansión. 
-
-```{r creacion_objeto_encuesta, message=FALSE, warning=FALSE, include=FALSE}
-movid_objeto <- datos_proc %>% #Creamos un nuevo objeto llamado movid_objeto con la información de datos_proc
-  as_survey_design(ids = 1, #Aplicamos diseño muestral, especificando los ids a partir de 1 (entrevistado seleccionado),
-                   weights = factor_expansion) #y el ponderador con factor de expansión 
-
-```
 
 
-
-## 3.5 Análisis de correlación
+## 3.4 Análisis de correlación
 
 ::: {style="text-align: justify"}
 El análisis de correlación mide la existencia de un cambio sistemático entre puntajes de dos o más variables cuantitativas, asumiendo una relación lineal entre ellas, es decir, el cambio de una variable tiene sobre otra, puede ser representada linealmente. Es la variación conjunta que se debe probar mediante **R de Pearson**: coeficiente a través del cual se mide la existencia de correlación entre las variables, es decir, es un estadístico que asume que la relación entre las variables es lineal.
@@ -121,7 +92,7 @@ tab_corr(.,
          encoding = "UTF-8")
 ```
 
-## 3.6 Regresión Lineal Múltiple
+## 3.5 Regresión Lineal Múltiple
 
 ### a. Modelos lineales múltinomiales
 
@@ -321,7 +292,6 @@ sjPlot::tab_model(list(modelo0,modelo3,modelo4,modelo5,modelo6),
 
 ### c. Interpretación de coeficientes en términos de dirección y fuerza de la asociación
 
-Valores menores a 1 reflejan una asociación negativa, mientras que valores mayores que 1 dan cuenta de una asociación positiva.
 
 ::: {style="text-align: justify"}
 Respecto a los coeficientes del modelo 6, es posible mencionar que para la variable **"edad"**, las chances de cumplir con las medidas de cuidado social para los **adultos**, controlando el efecto de las otras variables, son un **11,5% mayores** respecto a las **chances** de cumplir con las medidas de cuidado para los **jóvenes**. En cambio, los **adultos mayores** poseen **38,3% más chances** de cumplir con las medidas de cuidado social respecto a las chances de los jóvenes de cumplir con las medidas de cuidados contra el COVID-19.
