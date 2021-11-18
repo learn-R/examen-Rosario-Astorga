@@ -1,5 +1,5 @@
 ---
-title: "Hacia la corresponsabilidad social en los cuidados: Un análisis desde la perspectiva de género a los factores que inciden en la percepción de la carga de trabajos de cuidado en la pandemia en Chile"
+title: "Un análisis a los factores determinantes en la percepción de la carga de trabajos de cuidado durante la pandemia en Chile"
 subtitle: |
   | Análisis examen: Proyecto final 
   | Universidad Alberto Hurtado
