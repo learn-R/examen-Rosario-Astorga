@@ -7,8 +7,11 @@
 pacman::p_load(tidyverse, #Universo de paquetes
                sjmisc, #Para explorar datos
                dplyr, #Para manipular datos
+               sjlabelled, #Para trabajar con datos etiquetados
                haven, #cargar y exportar bases de datos en formatos .sav y .dta
                car) #Para recodificar manteniendo las etiquetas
+
+
 
 # 2. Importar datos  -----------------------------------------------------
 
@@ -34,7 +37,6 @@ frq(MOVID_2020$sexo)
 frq(MOVID_2020$g48)
 
 
-
 # 4. Selección de variables  -------------------------------------------
 
 ## Seleccionamos las siguientes variables:
@@ -57,18 +59,29 @@ movid_proc <- select(MOVID_2020, factor_expansion, id_encuesta, entrevistado, es
 
 ## 5.1 Recodificación y codificación como NA
 
-
 movid_proc <- movid_proc %>%
-  mutate(cuidarse = car::recode(.$cuidarse, recodes = c("c(8,9)=NA")),
-         cuidarse_dummy = car::recode(.$cuidarse, recodes =, c("c(1,2)=0;c(3,4,5)=1;c(8,9)=NA"), as.factor =  T,
-                                      levels = c(0, 1)),
-         estado_sm = car::recode(.$estado_sm, recodes = c("c(2,3,4)='Si se ha sentido deprimido';1 = 'No se ha sentido deprimido'; c(8,9)=NA")),
-         sexo = car::recode(.$sexo, c('1="Hombre";2="Mujer"'), as.factor = T),
+  mutate(estado_sm = car::recode(.$estado_sm, recodes = c("1=0;c(2,3,4)=1; c(8,9)=NA"), as.factor = T, levels = c(0, 1)),
+         sexo = car::recode(.$sexo, c("'Hombre' = 0; 'Mujer' = 1"), as.factor = T,  levels = c(0, 1)),
          edad = car::recode(.$edad, recodes = c("18:39='Joven';40:60='Adulto'; 61:hi='Adulto mayor'"),
-                            as.factor = T, levels = c("Joven", "Adulto", "Adulto mayor"))) %>%
-  mutate_at(vars(edad, trabaja, ), funs(forcats::as_factor(.)))#Transformo la variable edad, trabaja y riesgo_factor en un factor
+                            as.factor = T, levels = c("Joven", "Adulto", "Adulto mayor")),
+         variacion_td = car::recode(.$variacion_td, recodes = "c('Ha bajado. ¿Cuántas horas diarias ha bajado?','Se ha mantenido igual')=0; 'Ha subido. ¿Cuántas horas diarias ha subido?'=1; c('No sabe', 'No responde')= NA"),
+         variacion_cuidados = car::recode(.$variacion_cuidados, recodes = "c('Ha bajado. ¿Cuántas horas diarias ha bajado?','Se ha mantenido igual')=0; 'Ha subido. ¿Cuántas horas diarias ha subido?'=1; c('No sabe', 'No responde')= NA"),
+         ingresos = car::recode(.$ingresos, recodes = c("c(1,2,3)='Bajo';c(4,5) = 'Medio'; c(6,7,8) = 'Alto'; c(98,99)=NA"),  as.factor = T)) %>%
+  mutate_at(vars(edad, estado_sm, sexo, variacion_td, ingresos, trabajo_productivo, variacion_cuidados), funs(forcats::as_factor(.)))#Transformo la variable edad, trabaja y riesgo_factor en un factor
 #para que mi modelo se estime de manera correcta, conservando la etiqueta de la variable y poder así saber la cat. de referencia
 
+movid_proc <- movid_proc %>%
+rename("variacion_cuidados”=  f2) %>%
+ set_label(x = movid_proc$variacion_cuidados, label = Variacion trabajo de cuidados") %>% 
+  set_labels(movid_proc$variacion_cuidados,
+             labels=c( "Se mantuvo/disminuyó"=0,
+                       "Aumentó"=1, as.numeric=T))
+movid_proc <- movid_proc %>%
+  rename("variacion_td"=  f1) %>% 
+  set_label(x = movid_proc$variacion_td, label = "Variación del trabajo doméstico") %>% 
+  set_labels(movid_proc$variacion_td,
+             labels=c( "Se mantuvo/disminuyó"=0,
+                       "Aumentó"=1, as.numeric=T))
 # 6. Visualización el set de datos -------------------------------------------
 
 head(movid_proc)#visualizamos el único set de datos movid_proc para revisar que todo esté en orden antes de guardar y expotar
