@@ -59,6 +59,8 @@ movid_proc <- select(MOVID_2020, factor_expansion, id_encuesta, entrevistado, es
 
 ## 5.1 Recodificación y codificación como NA
 
+#Primero, recodificamos las variables y codificamos los casos perdidos como NA
+
 movid_proc <- movid_proc %>%
   mutate(estado_sm = car::recode(.$estado_sm, recodes = c("1=0;c(2,3,4)=1; c(8,9)=NA"), as.factor = T, levels = c(0, 1)),
          sexo = car::recode(.$sexo, c("'Hombre' = 0; 'Mujer' = 1"), as.factor = T,  levels = c(0, 1)),
@@ -70,6 +72,8 @@ movid_proc <- movid_proc %>%
   mutate_at(vars(edad, estado_sm, sexo, variacion_td, ingresos, trabajo_productivo, variacion_cuidados), funs(forcats::as_factor(.)))#Transformo la variable edad, trabaja y riesgo_factor en un factor
 #para que mi modelo se estime de manera correcta, conservando la etiqueta de la variable y poder así saber la cat. de referencia
 
+
+#Luego, etiquetamos 
 movid_proc <- movid_proc %>%
 rename("variacion_cuidados”=  f2) %>%
  set_label(x = movid_proc$variacion_cuidados, label = Variacion trabajo de cuidados") %>% 
