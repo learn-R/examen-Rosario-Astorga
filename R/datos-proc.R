@@ -62,15 +62,18 @@ movid <- select(MOVID_2020, factor_expansion, entrevistado, salud_mental = c2_3,
 #Primero, recodificamos las variables y codificamos los casos perdidos como NA
 
 movid_proc <- movid %>% 
-  mutate_at(vars(sexo, trabajo_domestico, salud_mental, trabajo_cuidados), funs(as.numeric(.))) %>% 
+  mutate_at(vars(sexo, trabajo_domestico, salud_mental, trabajo_cuidados, trabajo_productivo), funs(as.numeric(.))) %>% 
   filter(entrevistado == 1) %>%
-  mutate(salud_mental = car::recode(.$salud_mental, recodes = c("1='No se ha sentido deprimido'; c(2,3,4)='Si se ha sentido deprimido'; c(8,9)=NA"), as.factor = T, levels = c('No se ha sentido deprimido', 'Si se ha sentido deprimido')),
+  mutate(salud_mental = car::recode(.$salud_mental, recodes = c("1='No se ha sentido deprimido'; c(2,3,4)='Si se ha sentido deprimido'; c(8,9)=NA"), as.factor = T, 
+                                    levels = c('No se ha sentido deprimido', 'Si se ha sentido deprimido')),
          sexo = car::recode(.$sexo, recodes = c("1 = 'Hombre'; 2 = 'Mujer'"), as.factor = T,  levels = c('Hombre', 'Mujer')),
-         trabajo_productivo = car::recode(.$trabajo_productivo, recodes = c("1 = 'Sí trabajó'; 2 = 'No trabajó'"), as.factor = T,  levels = c('Hombre', 'Mujer')),
+         trabajo_productivo = car::recode(.$trabajo_productivo, recodes = c("1 = 'Sí trabajó'; 2 = 'No trabajó'"), as.factor = T,  levels = c('Sí trabajó', 'No trabajó')),
          edad = car::recode(.$edad, recodes = c("18:39='Joven';40:60='Adulto'; 61:hi='Adulto mayor'"),
                             as.factor = T, levels = c("Joven", "Adulto", "Adulto mayor")),
-         trabajo_cuidados = car::recode(.$trabajo_cuidados, recodes = c("c(1,2)='Se mantuvo o disminuyó trabajo cuidados'; 3='Aumentó trabajo cuidados'; c(8,9)= NA"), levels = c("No sabe/No responde", "Se mantuvo o disminuyó", "Aumentó")),
-         trabajo_domestico = car::recode(.$trabajo_domestico, recodes = c("c(1,2)='Se mantuvo o disminuyó trabajo doméstico'; 3='Aumentó trabajo doméstico'; c(8,9)= NA"), levels = c("No sabe/No responde", "Se mantuvo o disminuyó", "Aumentó"))) %>%
+         trabajo_cuidados = car::recode(.$trabajo_cuidados, recodes = c("c(1,2)='Se mantuvo o disminuyó trabajo cuidados'; 3='Aumentó trabajo cuidados'; c(8,9)= NA"), 
+                                        levels = c("Se mantuvo o disminuyó", "Aumentó")),
+         trabajo_domestico = car::recode(.$trabajo_domestico, recodes = c("c(1,2)='Se mantuvo o disminuyó trabajo doméstico'; 3='Aumentó trabajo doméstico'; c(8,9)= NA"), 
+                                         levels = c("Se mantuvo o disminuyó", "Aumentó"))) %>%
   mutate_at(vars(edad, sexo, trabajo_domestico, trabajo_productivo, trabajo_cuidados), funs(forcats::as_factor(.)))#Transformo las variables en un factor para que mi modelo se estime de manera correcta, 
 #conservando la etiqueta de la variable y poder así saber la cat. de referencia.
 

@@ -148,7 +148,7 @@ plot_model(modelo5, type = c("pred"),
 
 Primero se reporta el modelo 6 sin pesos muestrales:
 
-```{r reporte_modelo6_R_base, message=FALSE, warning=FALSE}
+```{r reporte_modelo5_R_base, message=FALSE, warning=FALSE}
 
 summary(modelo5)
 
@@ -156,7 +156,7 @@ summary(modelo5)
 
 Luego se compara con el modelo con pesos muestrales:
 
-```{r reporte_modelo6_diseño_complejo, message=FALSE, warning=FALSE}
+```{r reporte_modelo5_diseño_complejo, message=FALSE, warning=FALSE}
 
 summary(modelo5survey)
 
