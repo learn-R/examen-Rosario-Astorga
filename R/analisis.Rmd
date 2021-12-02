@@ -59,13 +59,13 @@ pacman::p_load(dplyr, #Para manipular datos
 
 ## 3.2 Carga de datos
 
-```{r carga_datos, message=FALSE, warning=FALSE, include=FALSE}
+```{r carga_datos, message=FALSE, warning=FALSE}
 datos_proc <- readRDS("../output/datos/datos_proc.rds")
 ```
 
 ## 3.3 Creación objeto encuesta
 
-```{r creacion_objeto_encuesta, message=FALSE, warning=FALSE, include=FALSE}
+```{r creacion_objeto_encuesta, message=FALSE, warning=FALSE}
 movid_objeto <- datos_proc %>% #Creamos un nuevo objeto llamado movid_objeto con la información de datos_proc
   as_survey_design(ids = 1, #Aplicamos diseño muestral, especificando los ids a partir de 1 (entrevistado seleccionado),
                    weights = factor_expansion) #y el ponderador con factor de expansión 
