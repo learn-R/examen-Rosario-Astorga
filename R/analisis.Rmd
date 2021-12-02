@@ -1,0 +1,217 @@
+---
+title: "Un análisis con perspectiva de género a los factores determinantes de la salud mental durante la pandemia en Chile"
+subtitle: |
+  | Examen: Proyecto final 
+  | Universidad Alberto Hurtado
+  | Análisis de Datos en R
+  | Profesora: Valentina Andrade de la Horra
+  | Ayudantes: Dafne Jaime Vargas y Nicolás Godoy Márquez
+author: "Rosario Astorga Pinto"
+date: "22/11/2021"
+output:
+  html_document: 
+    theme: cosmo
+    toc_depth: 2
+    toc_float: yes
+    highlight: pygments
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning = F, message = F)
+Sys.setlocale("LC_CTYPE", "spanish")
+options(OutDec= ",", digits = 3)
+```
+
+# 1. Abstract
+
+::: {style="text-align: justify"}
+El COVID-19 ha dejado en evidencia la importancia de la salud mental en momentos de mayor crisis en los que se agudizan e invisibilizan múltiples problemáticas sociales. Una de ellas se origina en la desigual distribución de la carga tanto física como mental entre hombres y mujeres dentro del hogar, según la OIT (2020) un 70% del total de mujeres, enfrentan debido a la pandemia una triple carga: trabajo doméstico, de cuidado y cognitivo no remunerado, el que se ha visto aumentado de forma considerable. La siguiente investigación busca analizar los factores que influyen en la salud mental durante la pandemia en Chile, considerando el sexo, edad, trabajo productivo, trabajo doméstico y trabajo de cuidados. Para efectos de esta investigación, se utilizó la base de datos MOVID-IMPACT (2020) y mediante un análisis de regresión logística binaria se concluye que existe una relación significativa entre el ser mujer y no trabajar con sentirse deprimida o desesperanzada.
+:::
+
+# 2. Introducción
+
+::: {style="text-align: justify"}
+En esta época de pandemia, la depresión y ansiedad son las enfermedades mentales de mayor recurrencia ya que las personas deben cambiar, en muchos casos de manera radical, sus hábitos y enfrentarse al aislamiento y confinamiento en sus hogares, teniendo que hacer frente a esta nueva forma de organizar la vida social. En esa misma línea, existen diferentes factores psicosociales que se presentan de manera desigual donde el estrés y la ansiedad en las mujeres son el resultado del aumento en la división de género en el trabajo familiar y doméstico (Hernandez & Biu, 2021).
+
+De acuerdo a los resultados de Encuesta de Salud Mental (2020) en Costa Rica, las mujeres de entre 18 y 35 años tienen mayor prevalencia de depresión, estrés y ansiedad que los hombres, siendo las más afectadas por la pandemia en términos de salud mental. Sumado a que ellas dedican más tiempo, en promedio, que los hombres al cuidado de niños y tareas domésticas no remuneradas. Esto se explica, por un lado, por el ciclo de vulnerabilidad causado socialmente por relaciones asimétricas de poder en el mercado económico lo cual refuerza y exacerba a su vez un poder desigual en la familia (Fraser, 2015).
+
+La pregunta que guiará este proyecto de investigación es: ¿qué factores influyen en la salud mental durante la pandemia en Chile"en pandemia en Chile? cuyo objetivo general entonces es analizar, desde una perspectiva de género, los factores que influyen en la salud mental en la pandemia en Chile.
+:::
+
+# 3. Análisis
+
+## 3.1 Carga de paquetes
+
+```{r carga_paquetes, message=FALSE, warning=FALSE, include=FALSE}
+
+pacman::p_load(dplyr, #Para manipular datos
+               tidyverse, #Universo de paquetes
+               magrittr, #Para utilizar el operador pipe
+               srvyr, #Para trabajar con muestras complejas
+               survey,#para estimar los modelos con peso muestral
+               remotes, #Para instalar texreg desde GitHub
+               texreg, #Para crear tablas en formato publicable
+               sjPlot) #Para visualizar los datos
+    
+  
+```
+
+## 3.2 Carga de datos
+
+```{r carga_datos, message=FALSE, warning=FALSE}
+datos_proc <- readRDS("../output/datos/datos_proc.rds")
+```
+
+## 3.3 Creación objeto encuesta
+
+```{r creacion_objeto_encuesta, message=FALSE, warning=FALSE}
+movid_objeto <- datos_proc %>% #Creamos un nuevo objeto llamado movid_objeto con la información de datos_proc
+  as_survey_design(ids = 1, #Aplicamos diseño muestral, especificando los ids a partir de 1 (entrevistado seleccionado),
+                   weights = factor_expansion) #y el ponderador con factor de expansión 
+
+```
+
+## 3.4 Modelo de regresión logística binaria
+
+### a. Construcción múltiple modelos logísticos
+
+En este apartado se crean los modelos: 1, 2, 3, 4 y 5 junto con el modelo 5 con el objeto encuesta.
+
+```{r modelos_logisticos, message=FALSE, warning=FALSE}
+
+modelo1 <- glm(salud_mental ~ 1, family = binomial(link = "logit"), data = datos_proc)
+modelo2 <- glm(salud_mental ~ sexo, family = binomial(link = "logit"), data = datos_proc)
+modelo3 <- glm(salud_mental ~ trabajo_domestico, family = binomial(link = "logit"), data = datos_proc)
+modelo4 <- glm(salud_mental ~ sexo + trabajo_domestico, family = binomial(link = "logit"), data = datos_proc)
+modelo5 <- glm(salud_mental ~ sexo + edad + trabajo_productivo + trabajo_domestico + trabajo_cuidados, family = binomial(link = "logit"), data = datos_proc)
+modelo5survey <- svyglm(salud_mental ~ sexo + edad + trabajo_productivo + trabajo_domestico + trabajo_cuidados, family = binomial(link = "logit"), design = movid_objeto, data = datos_proc)
+
+```
+
+### b. Representación modelos en una tabla
+
+Luego, se visualizan los todos los modelos (excepto modelo5survey) en una tabla única con coeficientes exponenciados correspondendientes a los Odds ratio que permiten reflejar la asociación entre las chances de las variables predictoras.
+
+```{r tabla_modelos_logisticos, message=FALSE, warning=FALSE}
+sjPlot::tab_model(list(modelo1,modelo2,modelo3,modelo4,modelo5),
+  string.intercept = "(Intercepto)",
+  string.pred = "Predictores",
+  string.est = "Estimación (OR)",
+  p.style = "stars",
+  collapse.ci = T,
+  digits = 3,
+  dv.labels = c("Modelo 1", "Modelo 2", "Modelo 3", "Modelo 4", "Modelo 5"),
+  transform = "exp",
+  show.reflvl = TRUE,
+  encoding = "UTF-8",
+  lang = "es")
+```
+
+### c. Interpretación
+
+::: {style="text-align: justify"}
+En relación a la variable **"sexo"**, las chances de sentirse deprimida o desesperanzada para las **mujeres**, controlando el efecto de las otras variables, son un **43,2% mayores** respecto a las **chances** de sentirse deprimido o desesperanzada para los **hombres**. Asimismo, los resultados indican que la diferencia de probabilidades en la percepción de salud mental entre hombres y mujeres si es estadísticamente significativa con un valor p\<0,01.
+
+Con respecto a la variable **"trabajo productivo"**, las chances de que una persona que **no trabajó la semana pasada** se sienta deprimida o desesperanzada son **47,6% mayores** a las chances de que una persona que **sí trabajó la semana pasada** se sienta deprimida o desesperanzada. Asimismo, los resultados indican que la diferencia de probabilidades en la percepción de salud mental entrea una persona que sí trabajó la semana pasada y una persona que no lo hiz es estadísticamente significativa con un valor p\<0,01.
+
+Acerca de la variable **"trabajo doméstico"**, las chances de que una persona que ha percibido un aumento del trabajo doméstico durante la pandemia se sienta deprimida o desesperanzada son **32,3% mayores** a las chances de que una persona que ha percibido una mantención o disminución del trabajo doméstico durante la pandemia se sienta deprimida o desesperanzada. Sin embargo, los resultados muestran que la diferencia de probabilidades en la percepción de salud mental de alguien que percibió una mantención o disminución del trabajo doméstico y de alguien que percibió un aumento del trabajo domésticomujeres no es estadísticamente significativa.
+
+Por último, respecto de la variable **"trabajo de cuidados"**, las chances de sentirse deprimida o desesperanzada de una persona que percibe un aumento en el trabajo de cuidados son **26,4% mayores** respecto a las **chances** de sentirse deprimida o desesperanzada de una persona que percibe un mantenimiento o disminución en el trabajo de cuidados durante la pandemia respecto a la situación previa.
+:::
+
+### d. Gráficos de valores predichos modelo 5 salud mental según sexo y trabajo productivo
+
+***Gráfico1 modelo 5 de valores predichos salud mental según sexo***
+
+```{r valores_predichos_sm_sexo, message=FALSE, warning=FALSE}
+plot_model(modelo5, type = c("pred"),
+           terms = c("sexo"),  digits = 3,
+           axis.title = c("Sexo", "Percepción salud mental"),
+           title = "Gráfico 1. Modelo 5 que estima la frecuencia de salud mental según sexo")
+```
+
+***Gráfico2 modelo 5 de valores predichos salud mental según trabajo***
+
+```{r valores_predichos_sm_trabajo, message=FALSE, warning=FALSE}
+plot_model(modelo5, type = c("pred"),
+           terms = c("trabajo_productivo"),  digits = 3,
+           axis.title = c("Trabajó la semana pasada", "Percepción salud mental"),
+           title = "Gráfico 2. Modelo 5 que estima la frecuencia de salud mental según trabajo")
+
+
+```
+
+### e. Comparación y reporte estimación modelo 5 con R base y modelo 5 con diseño complejo de encuestas.
+
+***Reporte con summary de modelo 6 con R base y diseño complejo***
+
+Primero se reporta el modelo 6 sin pesos muestrales:
+
+```{r reporte_modelo5_R_base, message=FALSE, warning=FALSE}
+
+summary(modelo5)
+
+```
+
+Luego se compara con el modelo con pesos muestrales:
+
+```{r reporte_modelo5_diseño_complejo, message=FALSE, warning=FALSE}
+
+summary(modelo5survey)
+
+```
+
+***Reporte con tab_model de modelo 5 con R base y diseño complejo***
+
+Asimismo, se reporta la tabla del modelo 6 con R base:
+
+```{r tabla_modelo5_R_base, message=FALSE, warning=FALSE}
+sjPlot::tab_model(modelo5, 
+                  show.ci=FALSE, 
+                  transform = 'exp', 
+                  p.style = "stars", 
+                  df.method = 'wald', 
+                  dv.labels = "Modelo 6 con R base", 
+                  string.pred = "Predictores", string.est = "β", 
+                  encoding =  "UTF-8")
+```
+
+Para luego compararla con la tabla del modelo 5 con diseño complejo:
+
+```{r tabla_modelo5_diseño_complejo, message=FALSE, warning=FALSE}
+sjPlot::tab_model(modelo5survey, 
+                  show.ci=FALSE, 
+                  transform = 'exp', 
+                  p.style = "stars", 
+                  df.method = 'wald',
+                  dv.labels = "Modelo 6 diseño complejo", 
+                  string.pred = "Predictores", string.est = "β", 
+                  encoding =  "UTF-8")
+```
+
+En resumen, se observa que cuando se utiliza el diseño complejo de encuestas en el modelo 5, la categoría "Mujer" deja de ser significativa eso implica que no tiene un efecto sobre la variable dependiente. Por otro lado, la categoría "Aumentó" de la variable trabajo doméstico se vuelve significativa. Finalmente, en ambos modelos la categoría "No trabajó" de la variable sobre trabajó la semana pasada es significativa, es decir, tiene un efecto sobre la percepción de la salud mental.
+
+# 4. Conclusión
+
+Una vez realizado el análisis de regresión logística binaria se puede concluir que existe un efecto del aumento en las tareas domésticas y de cuidados, el ser mujer y no tener un trabajo remunerado sobre la percepción de salud mental, es decir, en sentirse deprimida, desesperanzada o irritable.
+
+En el actual contexto de pandemia, esta realidad persiste con una magnitud preocupante. Tal como lo plantea ONU Mujeres y Cepal en el informe **Cuidados en América Latina y el Caribe en tiempos de COVID-19** (2020), la crisis "ha demostrado la insostenibilidad de la actual organización social de los cuidados, intensificando las desigualdades económicas y de género existentes, puesto que son las mujeres más pobres quienes más carga de cuidados soportan y a quienes la sobrecarga de cuidados condiciona, en mayor medida, sus oportunidades de conseguir sus medios para la subsistencia" (p.7).
+
+El trabajo doméstico y de cuidados es un tema que históricamente se le ha atribuido a las mujeres cuyas vidas se ven profundamente afectadas por las extensas horas de trabajo que realizan a diario de manera no remunerada, dejando de lado muchas veces su propia salud mental. Es por esto, que la corresponsabilidad social del cuidado como principio rector de la sociedad es una realidad que se hace urgente y que ha quedado en evidencia durante esta crisis sanitaria.
+
+# 5. Referencias
+
+-   Coronavirus Impact Monitor:Policiy, Access, Control and Transectorial Consequences (COVID-IMPACT). (2020). *Libro de Códigos*. Recuperado de: <https://rpubs.com/valentinaandrade/movid-impact-codebook>
+
+-   Coronavirus Impact Monitor:Policiy, Access, Control and Transectorial Consequences (COVID-IMPACT). (2020). *Informe Metodológico.* Recuperado de: <https://movid-impact.netlify.app/input/docs/Informe_Metodologico_MOVID-IMPACT.pdf>
+
+-   Coronavirus Impact Monitor:Policiy, Access, Control and Transectorial Consequences (COVID-IMPACT). (2020). *Base de datos en formato dta*. Recuperado de: <https://movid-impact.netlify.app/descargar/>
+
+-   Fraser,N. (2013). 2015. El feminismo, el capitalismo y la astucia de la historia. En *Fortunas del feminismo: del capitalismo gestionado por el estado a la crisis neoliberal,* 243-262.
+
+-   Hernandez Salazar, B., & Grace Biu, L. A. (2021). *Impacto de la pandemia COVID-10 en la salud mental de la población general*. Revista Ciencia Y Salud Integrando Conocimientos, 5(5), Pág. 45--56. <https://doi.org/10.34192/cienciaysalud.v5i5.332>
+
+-   ONU Mujeres & CEPAL. (2020). *Cuidados en América Latina y el Caribe en tiempos de COVID-19: hacia sistemas integrales para fortalecer la respuesta y la recuperación.* Recuperado de: [*https://www.cepal.org/sites/default/files/document/files/cuidados_covid_esp.pdf*](https://www.cepal.org/sites/default/files/document/files/cuidados_covid_esp.pdf)
+
+-   Organización Internacional del Trabajo. (2020). *Seguridad y salud en el trabajo frente a la pandemia.* Recuperado de: <https://www.ilo.org/wcmsp5/groups/public/---americas/---ro> lima/documents/briefingnote/wcms_742469.pdf
